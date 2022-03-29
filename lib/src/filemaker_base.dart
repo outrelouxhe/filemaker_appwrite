@@ -391,7 +391,15 @@ Future getRecordWithRecordId({
   required appwrite.Database database,
   required String layoutName,
   required String recordId,
+  required dynamic envVars,
 }) async {
+  filemakerAccountName = envVars['FILEMAKER_ACCOUNT_NAME'];
+  filemakerPassword = envVars['FILEMAKER_PASSWORD'];
+  filemakerFilename = envVars['FILEMAKER_FILENAME'];
+  filemakerDataApiUrl = envVars['FILEMAKER_DATA_API_URL'];
+  variablesCollectionId = envVars['VARIABLES_COLLECTION_ID'];
+  targetProjectId = envVars['TARGET_PROJECT_ID'];
+
   // Get token
   token = await getToken(database: database) ?? "";
   if (token.isEmpty) {
@@ -458,7 +466,15 @@ Future getRecordWithRecordId({
 Future setGlobals({
   required appwrite.Database database,
   required Map<String, String> globalFields,
+  required dynamic envVars,
 }) async {
+  filemakerAccountName = envVars['FILEMAKER_ACCOUNT_NAME'];
+  filemakerPassword = envVars['FILEMAKER_PASSWORD'];
+  filemakerFilename = envVars['FILEMAKER_FILENAME'];
+  filemakerDataApiUrl = envVars['FILEMAKER_DATA_API_URL'];
+  variablesCollectionId = envVars['VARIABLES_COLLECTION_ID'];
+  targetProjectId = envVars['TARGET_PROJECT_ID'];
+
   // Get token
   token = await getToken(database: database) ?? "";
   if (token.isEmpty) {
