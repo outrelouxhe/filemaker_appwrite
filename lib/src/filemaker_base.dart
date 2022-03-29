@@ -8,9 +8,9 @@ import 'package:intl/intl.dart';
 
 enum Method { post, patch }
 
-String? optimusAccountName;
-String? optimusPassword;
-String? optimusFilename;
+String? filemakerAccountName;
+String? filemakerPassword;
+String? filemakerFilename;
 String? filemakerDataApiUrl;
 String? variablesCollectionId;
 String? targetProjectId;
@@ -23,11 +23,10 @@ int now = DateTime.now().millisecondsSinceEpoch;
 Future getToken(
     {required appwrite.Database database, bool forceRenew = false}) async {
   try {
-    models.DocumentList documentList = await database.listDocuments(
-        collectionId: variablesCollectionId!,
-        queries: [
-          appwrite.Query.equal('key', '$targetProjectId.token.$optimusFilename')
-        ]);
+    models.DocumentList documentList = await database
+        .listDocuments(collectionId: variablesCollectionId!, queries: [
+      appwrite.Query.equal('key', '$targetProjectId.token.$filemakerFilename')
+    ]);
     if (documentList.total != 0) {
       token = documentList.documents.first.data['value'];
       epoch = documentList.documents.first.data['epoch'];
@@ -38,7 +37,7 @@ Future getToken(
           collectionId: variablesCollectionId!,
           documentId: "unique()",
           data: {
-            "key": '$targetProjectId.token.$optimusFilename',
+            "key": '$targetProjectId.token.$filemakerFilename',
             "value": "invalid",
             "epoch": "0"
           });
@@ -57,7 +56,7 @@ Future getToken(
   dynamic requestInterceptor(
       RequestOptions options, RequestInterceptorHandler handler) async {
     String basicAuth = 'Basic ' +
-        base64Encode(utf8.encode('$optimusAccountName:$optimusPassword'));
+        base64Encode(utf8.encode('$filemakerAccountName:$filemakerPassword'));
     options.headers.addAll({"Authorization": basicAuth});
     options.headers.addAll({"Content-Type": 'application/json'});
     options.baseUrl = filemakerDataApiUrl!;
@@ -86,7 +85,8 @@ Future getToken(
         onRequest: (options, handler) => requestInterceptor(options, handler),
         onError: (error, handler) => errorInterceptor(error, handler),
       ));
-    Response response = await dio.post("/databases/$optimusFilename/sessions");
+    Response response =
+        await dio.post("/databases/$filemakerFilename/sessions");
     dio.close();
     var _token = response.data['response']['token'];
     if (_token == null || _token is! String) {
@@ -121,9 +121,9 @@ Future createOrUpdateOptimusRecord({
   String? recordId,
   required dynamic envVars,
 }) async {
-  optimusAccountName = envVars['OPTIMUS_ACCOUNT_NAME'];
-  optimusPassword = envVars['OPTIMUS_PASSWORD'];
-  optimusFilename = envVars['OPTIMUS_FILENAME'];
+  filemakerAccountName = envVars['FILEMAKER_ACCOUNT_NAME'];
+  filemakerPassword = envVars['FILEMAKER_PASSWORD'];
+  filemakerFilename = envVars['FILEMAKER_FILENAME'];
   filemakerDataApiUrl = envVars['FILEMAKER_DATA_API_URL'];
   variablesCollectionId = envVars['VARIABLES_COLLECTION_ID'];
   targetProjectId = envVars['TARGET_PROJECT_ID'];
@@ -175,11 +175,11 @@ Future createOrUpdateOptimusRecord({
 
     response = (method == Method.post)
         ? await dio.post(
-            "/databases/$optimusFilename/layouts/$layoutName/records",
+            "/databases/$filemakerFilename/layouts/$layoutName/records",
             data: data,
           )
         : await dio.patch(
-            "/databases/$optimusFilename/layouts/$layoutName/records/$recordId",
+            "/databases/$filemakerFilename/layouts/$layoutName/records/$recordId",
             data: data,
           );
     var code = response.data['messages'][0]['code'];
@@ -189,11 +189,11 @@ Future createOrUpdateOptimusRecord({
       if (token.isEmpty) return Exception('Unable to get a new token');
       response = (method == Method.post)
           ? await dio.post(
-              "/databases/$optimusFilename/layouts/$layoutName/records",
+              "/databases/$filemakerFilename/layouts/$layoutName/records",
               data: data,
             )
           : await dio.patch(
-              "/databases/$optimusFilename/layouts/$layoutName/records/$recordId",
+              "/databases/$filemakerFilename/layouts/$layoutName/records/$recordId",
               data: data,
             );
     }
@@ -210,9 +210,9 @@ Future find({
   required var query,
   required dynamic envVars,
 }) async {
-  optimusAccountName = envVars['OPTIMUS_ACCOUNT_NAME'];
-  optimusPassword = envVars['OPTIMUS_PASSWORD'];
-  optimusFilename = envVars['OPTIMUS_FILENAME'];
+  filemakerAccountName = envVars['FILEMAKER_ACCOUNT_NAME'];
+  filemakerPassword = envVars['FILEMAKER_PASSWORD'];
+  filemakerFilename = envVars['FILEMAKER_FILENAME'];
   filemakerDataApiUrl = envVars['FILEMAKER_DATA_API_URL'];
   variablesCollectionId = envVars['VARIABLES_COLLECTION_ID'];
   targetProjectId = envVars['TARGET_PROJECT_ID'];
@@ -263,7 +263,7 @@ Future find({
     Response response;
 
     response = await dio.post(
-      "/databases/$optimusFilename/layouts/$layoutName/_find",
+      "/databases/$filemakerFilename/layouts/$layoutName/_find",
       data: query,
     );
 
@@ -273,7 +273,7 @@ Future find({
       token = await getToken(database: database, forceRenew: true) ?? "";
       if (token.isEmpty) return Exception('Unable to get a new token');
       response = response = await dio.post(
-        "/databases/$optimusFilename/layouts/$layoutName/_find",
+        "/databases/$filemakerFilename/layouts/$layoutName/_find",
         data: query,
       );
     }
@@ -292,9 +292,9 @@ Future runScript({
   String? parameter,
   required dynamic envVars,
 }) async {
-  optimusAccountName = envVars['OPTIMUS_ACCOUNT_NAME'];
-  optimusPassword = envVars['OPTIMUS_PASSWORD'];
-  optimusFilename = envVars['OPTIMUS_FILENAME'];
+  filemakerAccountName = envVars['FILEMAKER_ACCOUNT_NAME'];
+  filemakerPassword = envVars['FILEMAKER_PASSWORD'];
+  filemakerFilename = envVars['FILEMAKER_FILENAME'];
   filemakerDataApiUrl = envVars['FILEMAKER_DATA_API_URL'];
   variablesCollectionId = envVars['VARIABLES_COLLECTION_ID'];
   targetProjectId = envVars['TARGET_PROJECT_ID'];
@@ -345,7 +345,7 @@ Future runScript({
     Response response;
 
     String url =
-        "/databases/$optimusFilename/layouts/$layoutName/script/$scriptName";
+        "/databases/$filemakerFilename/layouts/$layoutName/script/$scriptName";
     if (parameter != null) {
       url += "?script.param=$parameter";
     }
@@ -438,7 +438,7 @@ Future getRecordWithRecordId({
     Response response;
 
     response = await dio.get(
-        "/databases/$optimusFilename/layouts/$layoutName/records/$recordId");
+        "/databases/$filemakerFilename/layouts/$layoutName/records/$recordId");
 
     var code = response.data['messages'][0]['code'];
     if (code == "952") {
@@ -446,7 +446,7 @@ Future getRecordWithRecordId({
       token = await getToken(database: database, forceRenew: true) ?? "";
       if (token.isEmpty) return Exception('Unable to get a new token');
       response = await dio.get(
-          "/databases/$optimusFilename/layouts/$layoutName/records/$recordId");
+          "/databases/$filemakerFilename/layouts/$layoutName/records/$recordId");
     }
     dio.close();
     return response.data;
@@ -504,10 +504,12 @@ Future setGlobals({
       ));
     Response response;
 
-    Map<String, dynamic> data = {"$optimusFilename globalFields": globalFields};
+    Map<String, dynamic> data = {
+      "$filemakerFilename globalFields": globalFields
+    };
     print('setting globals: $data');
     response = await dio.patch(
-      "/databases/$optimusFilename/globals",
+      "/databases/$filemakerFilename/globals",
       data: data,
     );
     print('setting globals response: ${response.data}');
@@ -517,7 +519,7 @@ Future setGlobals({
       token = await getToken(database: database, forceRenew: true) ?? "";
       if (token.isEmpty) return Exception('Unable to get a new token');
       response = await dio.patch(
-        "/databases/$optimusFilename/globals",
+        "/databases/$filemakerFilename/globals",
         data: data,
       );
     }
