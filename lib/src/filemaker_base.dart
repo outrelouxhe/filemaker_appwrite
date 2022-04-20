@@ -521,7 +521,7 @@ Future setGlobals({
     Response response;
 
     Map<String, dynamic> data = {
-      "$filemakerFilename globalFields": globalFields
+      "globalFields": globalFields
     };
     print('setting globals: $data');
     response = await dio.patch(
