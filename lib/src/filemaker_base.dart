@@ -87,7 +87,7 @@ Future getToken(
       ));
     Response response =
         await dio.post("/databases/$filemakerFilename/sessions");
-    dio.close();
+    dio.close(force: true);
     var _token = response.data['response']['token'];
     if (_token == null || _token is! String) {
       return null;
@@ -197,7 +197,7 @@ Future createOrUpdateOptimusRecord({
               data: data,
             );
     }
-    dio.close();
+    dio.close(force: true);
     return response.data;
   } catch (error) {
     return error;
@@ -277,7 +277,7 @@ Future find({
         data: query,
       );
     }
-    dio.close();
+    dio.close(force: true);
     return response.data;
   } catch (error) {
     return error;
@@ -359,7 +359,7 @@ Future runScript({
         if (token.isEmpty) return Exception('Unable to get a new token');
         response = await dio.get(url);
       }
-      dio.close();
+      dio.close(force: true);
       return response.data;
     } else {
       dio.get(url).then((response) async {
@@ -368,16 +368,16 @@ Future runScript({
           // Token is not valid, force a new token request
           token = await getToken(database: database, forceRenew: true) ?? "";
           if (token.isEmpty) {
-            dio.close();
+            dio.close(force: true);
             return;
           }
 
           dio.get(url).then((value) {
-            dio.close();
+            dio.close(force: true);
             return;
           });
         } else {
-          dio.close();
+          dio.close(force: true);
           return;
         }
       });
@@ -456,7 +456,7 @@ Future getRecordWithRecordId({
       response = await dio.get(
           "/databases/$filemakerFilename/layouts/$layoutName/records/$recordId");
     }
-    dio.close();
+    dio.close(force: true);
     return response.data;
   } catch (error) {
     return error;
@@ -520,9 +520,7 @@ Future setGlobals({
       ));
     Response response;
 
-    Map<String, dynamic> data = {
-      "globalFields": globalFields
-    };
+    Map<String, dynamic> data = {"globalFields": globalFields};
     print('setting globals: $data');
     response = await dio.patch(
       "/databases/$filemakerFilename/globals",
@@ -539,7 +537,7 @@ Future setGlobals({
         data: data,
       );
     }
-    dio.close();
+    dio.close(force: true);
     return response.data;
   } catch (error) {
     return error;
