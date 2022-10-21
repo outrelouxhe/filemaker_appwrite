@@ -87,7 +87,7 @@ Future getToken(
       ));
     Response response =
         await dio.post("/databases/$filemakerFilename/sessions");
-    dio.close(force: true);
+    dio.close();
     var _token = response.data['response']['token'];
     if (_token == null || _token is! String) {
       return null;
@@ -111,6 +111,28 @@ Future getToken(
     stderr.write('$error');
     return null;
   }
+}
+
+Future refreshToken({
+  required appwrite.Database database,
+  required dynamic envVars,
+}) async {
+  filemakerAccountName = envVars['FILEMAKER_ACCOUNT_NAME'];
+  filemakerPassword = envVars['FILEMAKER_PASSWORD'];
+  filemakerFilename = envVars['FILEMAKER_FILENAME'];
+  filemakerDataApiUrl = envVars['FILEMAKER_DATA_API_URL'];
+  variablesCollectionId = envVars['VARIABLES_COLLECTION_ID'];
+  targetProjectId = envVars['TARGET_PROJECT_ID'];
+
+  // Get token
+  var getTokenResult = await getToken(database: database) ?? "";
+  if (token.isEmpty) {
+    token = await getToken(database: database, forceRenew: true) ?? "";
+  }
+  if (token.isEmpty) {
+    return Exception('Unable to get a new token $getTokenResult');
+  }
+  return token;
 }
 
 Future createOrUpdateOptimusRecord({
@@ -197,7 +219,7 @@ Future createOrUpdateOptimusRecord({
               data: data,
             );
     }
-    dio.close(force: true);
+    dio.close();
     return response.data;
   } catch (error) {
     return error;
@@ -277,7 +299,7 @@ Future find({
         data: query,
       );
     }
-    dio.close(force: true);
+    dio.close();
     return response.data;
   } catch (error) {
     return error;
@@ -359,7 +381,7 @@ Future runScript({
         if (token.isEmpty) return Exception('Unable to get a new token');
         response = await dio.get(url);
       }
-      dio.close(force: true);
+      dio.close();
       return response.data;
     } else {
       dio.get(url).then((response) async {
@@ -368,16 +390,16 @@ Future runScript({
           // Token is not valid, force a new token request
           token = await getToken(database: database, forceRenew: true) ?? "";
           if (token.isEmpty) {
-            dio.close(force: true);
+            dio.close();
             return;
           }
 
           dio.get(url).then((value) {
-            dio.close(force: true);
+            dio.close();
             return;
           });
         } else {
-          dio.close(force: true);
+          dio.close();
           return;
         }
       });
@@ -456,7 +478,7 @@ Future getRecordWithRecordId({
       response = await dio.get(
           "/databases/$filemakerFilename/layouts/$layoutName/records/$recordId");
     }
-    dio.close(force: true);
+    dio.close();
     return response.data;
   } catch (error) {
     return error;
@@ -520,7 +542,9 @@ Future setGlobals({
       ));
     Response response;
 
-    Map<String, dynamic> data = {"globalFields": globalFields};
+    Map<String, dynamic> data = {
+      "$filemakerFilename globalFields": globalFields
+    };
     print('setting globals: $data');
     response = await dio.patch(
       "/databases/$filemakerFilename/globals",
@@ -537,7 +561,7 @@ Future setGlobals({
         data: data,
       );
     }
-    dio.close(force: true);
+    dio.close();
     return response.data;
   } catch (error) {
     return error;
