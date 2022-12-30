@@ -14,7 +14,6 @@ String? filemakerFilename;
 String? filemakerDataApiUrl;
 String? variablesCollectionId;
 String? targetProjectId;
-String? databaseId;
 
 String token = "";
 String tokenDocumentId = "";
@@ -22,23 +21,19 @@ int epoch = 0;
 int now = DateTime.now().millisecondsSinceEpoch;
 
 Future getToken(
-    {required appwrite.Databases databases, bool forceRenew = false}) async {
+    {required appwrite.Database database, bool forceRenew = false}) async {
   try {
-    models.DocumentList documentList = await databases.listDocuments(
-        databaseId: databaseId!,
-        collectionId: variablesCollectionId!,
-        queries: [
-          appwrite.Query.equal(
-              'key', '$targetProjectId.token.$filemakerFilename')
-        ]);
+    models.DocumentList documentList = await database
+        .listDocuments(collectionId: variablesCollectionId!, queries: [
+      appwrite.Query.equal('key', '$targetProjectId.token.$filemakerFilename')
+    ]);
     if (documentList.total != 0) {
       token = documentList.documents.first.data['value'];
       epoch = documentList.documents.first.data['epoch'];
       tokenDocumentId = documentList.documents.first.data['\$id'];
     } else {
       epoch = 0;
-      Document document = await databases.createDocument(
-          databaseId: databaseId!,
+      Document document = await database.createDocument(
           collectionId: variablesCollectionId!,
           documentId: "unique()",
           data: {
@@ -101,8 +96,7 @@ Future getToken(
     formatter = DateFormat('dd/MM/yyyy HH:mm:ss');
     String timestamp =
         formatter.format(DateTime.fromMillisecondsSinceEpoch(now));
-    await databases.updateDocument(
-      databaseId: databaseId!,
+    await database.updateDocument(
       collectionId: variablesCollectionId!,
       documentId: tokenDocumentId,
       data: {
@@ -120,7 +114,7 @@ Future getToken(
 }
 
 Future refreshToken({
-  required appwrite.Databases databases,
+  required appwrite.Database database,
   required dynamic envVars,
 }) async {
   filemakerAccountName = envVars['FILEMAKER_ACCOUNT_NAME'];
@@ -129,12 +123,11 @@ Future refreshToken({
   filemakerDataApiUrl = envVars['FILEMAKER_DATA_API_URL'];
   variablesCollectionId = envVars['VARIABLES_COLLECTION_ID'];
   targetProjectId = envVars['TARGET_PROJECT_ID'];
-  databaseId = envVars['DATABASE_ID'];
 
   // Get token
-  var getTokenResult = await getToken(databases: databases) ?? "";
+  var getTokenResult = await getToken(database: database) ?? "";
   if (token.isEmpty) {
-    token = await getToken(databases: databases, forceRenew: true) ?? "";
+    token = await getToken(database: database, forceRenew: true) ?? "";
   }
   if (token.isEmpty) {
     return Exception('Unable to get a new token $getTokenResult');
@@ -143,7 +136,7 @@ Future refreshToken({
 }
 
 Future createOrUpdateOptimusRecord({
-  required appwrite.Databases databases,
+  required appwrite.Database database,
   required String layoutName,
   required var data,
   required Method method,
@@ -156,12 +149,11 @@ Future createOrUpdateOptimusRecord({
   filemakerDataApiUrl = envVars['FILEMAKER_DATA_API_URL'];
   variablesCollectionId = envVars['VARIABLES_COLLECTION_ID'];
   targetProjectId = envVars['TARGET_PROJECT_ID'];
-  databaseId = envVars['DATABASE_ID'];
 
   // Get token
-  var getTokenResult = await getToken(databases: databases) ?? "";
+  var getTokenResult = await getToken(database: database) ?? "";
   if (token.isEmpty) {
-    token = await getToken(databases: databases, forceRenew: true) ?? "";
+    token = await getToken(database: database, forceRenew: true) ?? "";
   }
   if (token.isEmpty) {
     return Exception('Unable to get a new token $getTokenResult');
@@ -215,7 +207,7 @@ Future createOrUpdateOptimusRecord({
     var code = response.data['messages'][0]['code'];
     if (code == "952") {
       // Token is not valid, force a new token request
-      token = await getToken(databases: databases, forceRenew: true) ?? "";
+      token = await getToken(database: database, forceRenew: true) ?? "";
       if (token.isEmpty) return Exception('Unable to get a new token');
       response = (method == Method.post)
           ? await dio.post(
@@ -235,7 +227,7 @@ Future createOrUpdateOptimusRecord({
 }
 
 Future find({
-  required appwrite.Databases databases,
+  required appwrite.Database database,
   required String layoutName,
   required var query,
   required dynamic envVars,
@@ -246,12 +238,11 @@ Future find({
   filemakerDataApiUrl = envVars['FILEMAKER_DATA_API_URL'];
   variablesCollectionId = envVars['VARIABLES_COLLECTION_ID'];
   targetProjectId = envVars['TARGET_PROJECT_ID'];
-  databaseId = envVars['DATABASE_ID'];
 
   // Get token
-  var getTokenResult = await getToken(databases: databases) ?? "";
+  var getTokenResult = await getToken(database: database) ?? "";
   if (token.isEmpty) {
-    token = await getToken(databases: databases, forceRenew: true) ?? "";
+    token = await getToken(database: database, forceRenew: true) ?? "";
   }
   if (token.isEmpty) {
     return Exception('Unable to get a new token $getTokenResult');
@@ -301,7 +292,7 @@ Future find({
     var code = response.data['messages'][0]['code'];
     if (code == "952") {
       // Token is not valid, force a new token request
-      token = await getToken(databases: databases, forceRenew: true) ?? "";
+      token = await getToken(database: database, forceRenew: true) ?? "";
       if (token.isEmpty) return Exception('Unable to get a new token');
       response = response = await dio.post(
         "/databases/$filemakerFilename/layouts/$layoutName/_find",
@@ -316,7 +307,7 @@ Future find({
 }
 
 Future runScript({
-  required appwrite.Databases databases,
+  required appwrite.Database database,
   required String layoutName,
   required String scriptName,
   required bool waitResponse,
@@ -329,12 +320,11 @@ Future runScript({
   filemakerDataApiUrl = envVars['FILEMAKER_DATA_API_URL'];
   variablesCollectionId = envVars['VARIABLES_COLLECTION_ID'];
   targetProjectId = envVars['TARGET_PROJECT_ID'];
-  databaseId = envVars['DATABASE_ID'];
 
   // Get token
-  token = await getToken(databases: databases) ?? "";
+  token = await getToken(database: database) ?? "";
   if (token.isEmpty) {
-    token = await getToken(databases: databases, forceRenew: true) ?? "";
+    token = await getToken(database: database, forceRenew: true) ?? "";
   }
   if (token.isEmpty) {
     return Exception('Unable to get a new token');
@@ -387,7 +377,7 @@ Future runScript({
       var code = response.data['messages'][0]['code'];
       if (code == "952") {
         // Token is not valid, force a new token request
-        token = await getToken(databases: databases, forceRenew: true) ?? "";
+        token = await getToken(database: database, forceRenew: true) ?? "";
         if (token.isEmpty) return Exception('Unable to get a new token');
         response = await dio.get(url);
       }
@@ -398,7 +388,7 @@ Future runScript({
         var code = response.data['messages'][0]['code'];
         if (code == "952") {
           // Token is not valid, force a new token request
-          token = await getToken(databases: databases, forceRenew: true) ?? "";
+          token = await getToken(database: database, forceRenew: true) ?? "";
           if (token.isEmpty) {
             dio.close();
             return;
@@ -420,7 +410,7 @@ Future runScript({
 }
 
 Future getRecordWithRecordId({
-  required appwrite.Databases databases,
+  required appwrite.Database database,
   required String layoutName,
   required String recordId,
   required dynamic envVars,
@@ -431,12 +421,11 @@ Future getRecordWithRecordId({
   filemakerDataApiUrl = envVars['FILEMAKER_DATA_API_URL'];
   variablesCollectionId = envVars['VARIABLES_COLLECTION_ID'];
   targetProjectId = envVars['TARGET_PROJECT_ID'];
-  databaseId = envVars['DATABASE_ID'];
 
   // Get token
-  token = await getToken(databases: databases) ?? "";
+  token = await getToken(database: database) ?? "";
   if (token.isEmpty) {
-    token = await getToken(databases: databases, forceRenew: true) ?? "";
+    token = await getToken(database: database, forceRenew: true) ?? "";
   }
   if (token.isEmpty) {
     return Exception('Unable to get a new token');
@@ -484,7 +473,7 @@ Future getRecordWithRecordId({
     var code = response.data['messages'][0]['code'];
     if (code == "952") {
       // Token is not valid, force a new token request
-      token = await getToken(databases: databases, forceRenew: true) ?? "";
+      token = await getToken(database: database, forceRenew: true) ?? "";
       if (token.isEmpty) return Exception('Unable to get a new token');
       response = await dio.get(
           "/databases/$filemakerFilename/layouts/$layoutName/records/$recordId");
@@ -497,7 +486,7 @@ Future getRecordWithRecordId({
 }
 
 Future setGlobals({
-  required appwrite.Databases databases,
+  required appwrite.Database database,
   required Map<String, String> globalFields,
   required dynamic envVars,
 }) async {
@@ -507,12 +496,11 @@ Future setGlobals({
   filemakerDataApiUrl = envVars['FILEMAKER_DATA_API_URL'];
   variablesCollectionId = envVars['VARIABLES_COLLECTION_ID'];
   targetProjectId = envVars['TARGET_PROJECT_ID'];
-  databaseId = envVars['DATABASE_ID'];
 
   // Get token
-  token = await getToken(databases: databases) ?? "";
+  token = await getToken(database: database) ?? "";
   if (token.isEmpty) {
-    token = await getToken(databases: databases, forceRenew: true) ?? "";
+    token = await getToken(database: database, forceRenew: true) ?? "";
   }
   if (token.isEmpty) {
     return Exception('Unable to get a new token');
@@ -566,7 +554,7 @@ Future setGlobals({
     var code = response.data['messages'][0]['code'];
     if (code == "952") {
       // Token is not valid, force a new token request
-      token = await getToken(databases: databases, forceRenew: true) ?? "";
+      token = await getToken(database: database, forceRenew: true) ?? "";
       if (token.isEmpty) return Exception('Unable to get a new token');
       response = await dio.patch(
         "/databases/$filemakerFilename/globals",
