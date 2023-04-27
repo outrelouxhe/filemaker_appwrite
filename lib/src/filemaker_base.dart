@@ -21,6 +21,9 @@ String tokenDocumentId = "";
 int epoch = 0;
 int now = DateTime.now().millisecondsSinceEpoch;
 
+// Trick to test if repo is well updated
+String get getFilemakerAppwriteVersion => '2023-04-27';
+
 Future getToken(
     {required appwrite.Databases databases, bool forceRenew = false}) async {
   try {
