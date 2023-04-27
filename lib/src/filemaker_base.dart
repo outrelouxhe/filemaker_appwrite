@@ -55,6 +55,22 @@ Future getToken(
   }
 
   if (now - epoch <= 14 * 60 * 1000 && !forceRenew) {
+    // Set timestamp to now to extand token lifetime
+
+    DateFormat formatter;
+    formatter = DateFormat('dd/MM/yyyy HH:mm:ss');
+    String timestamp =
+        formatter.format(DateTime.fromMillisecondsSinceEpoch(now));
+    await databases.updateDocument(
+      databaseId: databaseId!,
+      collectionId: variablesCollectionId!,
+      documentId: tokenDocumentId,
+      data: {
+        "epoch": now,
+        "comments": timestamp,
+      },
+    );
+
     return token;
   }
   // Configure dio request to communicate with Filemaker Data API
