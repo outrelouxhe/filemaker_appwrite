@@ -73,6 +73,7 @@ Future getToken(
         "comments": timestamp,
       },
     );
+    print('getToken - Extend token $token to $timestamp');
 
     return token;
   }
@@ -84,6 +85,7 @@ Future getToken(
     options.headers.addAll({"Authorization": basicAuth});
     options.headers.addAll({"Content-Type": 'application/json'});
     options.baseUrl = filemakerDataApiUrl!;
+    print('getToken - requestInterceptor options: $options');
     return handler.next(options);
   }
 
@@ -100,6 +102,7 @@ Future getToken(
     stderr.write('${error.requestOptions.uri}');
     stderr.write('${error.requestOptions.extra}');
     stderr.write('${error.requestOptions.queryParameters}');
+    print('getToken - errorInterceptor error: $error');
     handler.next(error);
   }
 
@@ -109,8 +112,11 @@ Future getToken(
         onRequest: (options, handler) => requestInterceptor(options, handler),
         onError: (error, handler) => errorInterceptor(error, handler),
       ));
+    print('getToken - Sending token request to Filemaker Data API');
     Response response =
         await dio.post("/databases/$filemakerFilename/sessions");
+    print(
+        'getToken - Receiving token response from Filemaker Data API: ${response.data}');
     dio.close();
     var _token = response.data['response']['token'];
     if (_token == null || _token is! String) {
@@ -131,6 +137,7 @@ Future getToken(
       },
     );
     token = _token;
+    print('getToken - New token $token updated at $timestamp');
     return _token;
   } catch (error) {
     stderr.write('$error');
@@ -179,10 +186,15 @@ Future createOrUpdateOptimusRecord({
 
   // Get token
   var getTokenResult = await getToken(databases: databases) ?? "";
+  print(
+      'createOrUpdateOptimusRecord - getTokenResult: $getTokenResult - token: $token');
   if (token.isEmpty) {
+    print('createOrUpdateOptimusRecord - token is empty, forceRenew');
     token = await getToken(databases: databases, forceRenew: true) ?? "";
   }
   if (token.isEmpty) {
+    print(
+        'createOrUpdateOptimusRecord - token is STILL empty, return Exception');
     return Exception('Unable to get a new token $getTokenResult');
   }
   // Configure dio request to communicate with Filemaker Data API
@@ -211,6 +223,8 @@ Future createOrUpdateOptimusRecord({
     stderr.write('uri: ${error.requestOptions.uri}');
     stderr.write('extra: ${error.requestOptions.extra}');
     stderr.write('queryParameters: ${error.requestOptions.queryParameters}');
+    print(
+        'createOrUpdateOptimusRecord - errorInterceptor -  ${error.response} -  ${error.requestOptions.data}');
     handler.next(error);
   }
 
@@ -234,8 +248,14 @@ Future createOrUpdateOptimusRecord({
     var code = response.data['messages'][0]['code'];
     if (code == "952") {
       // Token is not valid, force a new token request
+      print(
+          'createOrUpdateOptimusRecord - errorInterceptor -  ${response.data} -  forceRenew');
       token = await getToken(databases: databases, forceRenew: true) ?? "";
-      if (token.isEmpty) return Exception('Unable to get a new token');
+      if (token.isEmpty) {
+        print(
+            'createOrUpdateOptimusRecord - errorInterceptor - token is empty, return Exception');
+        return Exception('Unable to get a new token');
+      }
       response = (method == Method.post)
           ? await dio.post(
               "/databases/$filemakerFilename/layouts/$layoutName/records",
@@ -270,9 +290,11 @@ Future find({
   // Get token
   var getTokenResult = await getToken(databases: databases) ?? "";
   if (token.isEmpty) {
+    print('find - token is empty, forceRenew');
     token = await getToken(databases: databases, forceRenew: true) ?? "";
   }
   if (token.isEmpty) {
+    print('find - token is STILL empty, return Exception');
     return Exception('Unable to get a new token $getTokenResult');
   }
   // Configure dio request to communicate with Filemaker Data API
@@ -301,6 +323,7 @@ Future find({
     stderr.write('uri: ${error.requestOptions.uri}');
     stderr.write('extra: ${error.requestOptions.extra}');
     stderr.write('queryParameters: ${error.requestOptions.queryParameters}');
+    print('find - errorInterceptor -  ${error.response} -  ${error.message}');
     handler.next(error);
   }
 
@@ -353,9 +376,11 @@ Future runScript({
   // Get token
   token = await getToken(databases: databases) ?? "";
   if (token.isEmpty) {
+    print('runScript - token is empty, forceRenew');
     token = await getToken(databases: databases, forceRenew: true) ?? "";
   }
   if (token.isEmpty) {
+    print('runScript - token is STILL empty, return Exception');
     return Exception('Unable to get a new token');
   }
   // Configure dio request to communicate with Filemaker Data API
@@ -384,6 +409,8 @@ Future runScript({
     stderr.write('${error.requestOptions.uri}');
     stderr.write('${error.requestOptions.extra}');
     stderr.write('${error.requestOptions.queryParameters}');
+    print(
+        'runScript - errorInterceptor -  ${error.response} -  ${error.message}');
     handler.next(error);
   }
 
@@ -406,6 +433,8 @@ Future runScript({
       var code = response.data['messages'][0]['code'];
       if (code == "952") {
         // Token is not valid, force a new token request
+        print(
+            'runScript - Token $token is not valid ${response.data}, force a new token request');
         token = await getToken(databases: databases, forceRenew: true) ?? "";
         if (token.isEmpty) return Exception('Unable to get a new token');
         response = await dio.get(url);
@@ -417,6 +446,8 @@ Future runScript({
         var code = response.data['messages'][0]['code'];
         if (code == "952") {
           // Token is not valid, force a new token request
+          print(
+              'runScript - Token $token is not valid ${response.data}, force a new token request');
           token = await getToken(databases: databases, forceRenew: true) ?? "";
           if (token.isEmpty) {
             dio.close();
@@ -455,9 +486,11 @@ Future getRecordWithRecordId({
   // Get token
   token = await getToken(databases: databases) ?? "";
   if (token.isEmpty) {
+    print('getRecordWithRecordId - token is empty, forceRenew');
     token = await getToken(databases: databases, forceRenew: true) ?? "";
   }
   if (token.isEmpty) {
+    print('getRecordWithRecordId - token is STILL empty, return Exception');
     return Exception('Unable to get a new token');
   }
   // Configure dio request to communicate with Filemaker Data API
@@ -503,8 +536,13 @@ Future getRecordWithRecordId({
     var code = response.data['messages'][0]['code'];
     if (code == "952") {
       // Token is not valid, force a new token request
+      print(
+          'getRecordWithRecordId - Token $token is not valid ${response.data}, force a new token request');
       token = await getToken(databases: databases, forceRenew: true) ?? "";
-      if (token.isEmpty) return Exception('Unable to get a new token');
+      if (token.isEmpty) {
+        print('getRecordWithRecordId - token is STILL empty, return Exception');
+        return Exception('Unable to get a new token');
+      }
       response = await dio.get(
           "/databases/$filemakerFilename/layouts/$layoutName/records/$recordId");
     }
@@ -531,9 +569,11 @@ Future setGlobals({
   // Get token
   token = await getToken(databases: databases) ?? "";
   if (token.isEmpty) {
+    print('setGlobals - token is empty, forceRenew');
     token = await getToken(databases: databases, forceRenew: true) ?? "";
   }
   if (token.isEmpty) {
+    print('setGlobals - token is STILL empty, return Exception');
     return Exception('Unable to get a new token');
   }
   // Configure dio request to communicate with Filemaker Data API
@@ -562,6 +602,8 @@ Future setGlobals({
     stderr.write('${error.requestOptions.uri}');
     stderr.write('${error.requestOptions.extra}');
     stderr.write('${error.requestOptions.queryParameters}');
+    print(
+        'setGlobals - errorInterceptor -  ${error.response} -  ${error.message}');
     handler.next(error);
   }
 
@@ -585,8 +627,13 @@ Future setGlobals({
     var code = response.data['messages'][0]['code'];
     if (code == "952") {
       // Token is not valid, force a new token request
+      print(
+          'setGlobals - Token $token is not valid ${response.data}, force a new token request');
       token = await getToken(databases: databases, forceRenew: true) ?? "";
-      if (token.isEmpty) return Exception('Unable to get a new token');
+      if (token.isEmpty) {
+        print('setGlobals - token is STILL empty, return Exception');
+        return Exception('Unable to get a new token');
+      }
       response = await dio.patch(
         "/databases/$filemakerFilename/globals",
         data: data,
