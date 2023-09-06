@@ -52,8 +52,10 @@ Future getToken(
       tokenDocumentId = document.$id;
     }
   } on appwrite.AppwriteException catch (e) {
+    print('getToken - AppwriteException: $e');
     return e;
   } catch (e) {
+    print('getToken - Exception: $e');
     return e;
   }
 
