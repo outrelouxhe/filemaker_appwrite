@@ -25,7 +25,9 @@ int now = DateTime.now().millisecondsSinceEpoch;
 String get getFilemakerAppwriteVersion => '2023-04-27';
 
 Future getToken(
-    {required appwrite.Databases databases, bool forceRenew = false}) async {
+    {required appwrite.Databases databases,
+    bool forceRenew = false,
+    required String process}) async {
   try {
     print(
         'getToken START with current forceRenew: $forceRenew - token: $token');
@@ -80,7 +82,7 @@ Future getToken(
       documentId: tokenDocumentId,
       data: {
         "epoch": now,
-        "comments": timestamp,
+        "comments": 'timestamp process:$process now:$now',
       },
     );
     print('getToken - Extend token $token to $timestamp');
@@ -173,9 +175,14 @@ Future refreshToken({
   databaseId = envVars['DATABASE_ID'];
 
   // Get token
-  var getTokenResult = await getToken(databases: databases) ?? "";
+  var getTokenResult =
+      await getToken(databases: databases, process: 'refreshToken 1') ?? "";
   if (token.isEmpty) {
-    token = await getToken(databases: databases, forceRenew: true) ?? "";
+    token = await getToken(
+            databases: databases,
+            forceRenew: true,
+            process: 'refreshToken 2') ??
+        "";
   }
   if (token.isEmpty) {
     return Exception('Unable to get a new token $getTokenResult');
@@ -200,12 +207,18 @@ Future createOrUpdateOptimusRecord({
   databaseId = envVars['DATABASE_ID'];
 
   // Get token
-  var getTokenResult = await getToken(databases: databases) ?? "";
+  var getTokenResult = await getToken(
+          databases: databases, process: 'createOrUpdateOptimusRecord') ??
+      "";
   print(
       'createOrUpdateOptimusRecord - getTokenResult: $getTokenResult - token: $token');
   if (token.isEmpty) {
     print('createOrUpdateOptimusRecord - token is empty, forceRenew');
-    token = await getToken(databases: databases, forceRenew: true) ?? "";
+    token = await getToken(
+            databases: databases,
+            forceRenew: true,
+            process: 'createOrUpdateOptimusRecord') ??
+        "";
   }
   if (token.isEmpty) {
     print(
@@ -265,7 +278,11 @@ Future createOrUpdateOptimusRecord({
       // Token is not valid, force a new token request
       print(
           'createOrUpdateOptimusRecord - errorInterceptor -  ${response.data} -  forceRenew');
-      token = await getToken(databases: databases, forceRenew: true) ?? "";
+      token = await getToken(
+              databases: databases,
+              forceRenew: true,
+              process: 'createOrUpdateOptimusRecord') ??
+          "";
       if (token.isEmpty) {
         print(
             'createOrUpdateOptimusRecord - errorInterceptor - token is empty, return Exception');
@@ -303,10 +320,13 @@ Future find({
   databaseId = envVars['DATABASE_ID'];
 
   // Get token
-  var getTokenResult = await getToken(databases: databases) ?? "";
+  var getTokenResult =
+      await getToken(databases: databases, process: 'find 1') ?? "";
   if (token.isEmpty) {
     print('find - token is empty, forceRenew');
-    token = await getToken(databases: databases, forceRenew: true) ?? "";
+    token = await getToken(
+            databases: databases, forceRenew: true, process: 'find 2') ??
+        "";
   }
   if (token.isEmpty) {
     print('find - token is STILL empty, return Exception');
@@ -358,7 +378,9 @@ Future find({
     var code = response.data['messages'][0]['code'];
     if (code == "952") {
       // Token is not valid, force a new token request
-      token = await getToken(databases: databases, forceRenew: true) ?? "";
+      token = await getToken(
+              databases: databases, forceRenew: true, process: 'find 3') ??
+          "";
       if (token.isEmpty) return Exception('Unable to get a new token');
       response = response = await dio.post(
         "/databases/$filemakerFilename/layouts/$layoutName/_find",
@@ -389,10 +411,12 @@ Future runScript({
   databaseId = envVars['DATABASE_ID'];
 
   // Get token
-  token = await getToken(databases: databases) ?? "";
+  token = await getToken(databases: databases, process: 'runScript 1') ?? "";
   if (token.isEmpty) {
     print('runScript - token is empty, forceRenew');
-    token = await getToken(databases: databases, forceRenew: true) ?? "";
+    token = await getToken(
+            databases: databases, forceRenew: true, process: 'runScript 2') ??
+        "";
   }
   if (token.isEmpty) {
     print('runScript - token is STILL empty, return Exception');
@@ -450,7 +474,11 @@ Future runScript({
         // Token is not valid, force a new token request
         print(
             'runScript - Token $token is not valid ${response.data}, force a new token request');
-        token = await getToken(databases: databases, forceRenew: true) ?? "";
+        token = await getToken(
+                databases: databases,
+                forceRenew: true,
+                process: 'runScript 3') ??
+            "";
         if (token.isEmpty) return Exception('Unable to get a new token');
         response = await dio.get(url);
       }
@@ -463,7 +491,11 @@ Future runScript({
           // Token is not valid, force a new token request
           print(
               'runScript - Token $token is not valid ${response.data}, force a new token request');
-          token = await getToken(databases: databases, forceRenew: true) ?? "";
+          token = await getToken(
+                  databases: databases,
+                  forceRenew: true,
+                  process: 'runScript 4') ??
+              "";
           if (token.isEmpty) {
             dio.close();
             return;
@@ -499,10 +531,16 @@ Future getRecordWithRecordId({
   databaseId = envVars['DATABASE_ID'];
 
   // Get token
-  token = await getToken(databases: databases) ?? "";
+  token = await getToken(
+          databases: databases, process: 'getRecordWithRecordId 1') ??
+      "";
   if (token.isEmpty) {
     print('getRecordWithRecordId - token is empty, forceRenew');
-    token = await getToken(databases: databases, forceRenew: true) ?? "";
+    token = await getToken(
+            databases: databases,
+            forceRenew: true,
+            process: 'getRecordWithRecordId 2') ??
+        "";
   }
   if (token.isEmpty) {
     print('getRecordWithRecordId - token is STILL empty, return Exception');
@@ -553,7 +591,11 @@ Future getRecordWithRecordId({
       // Token is not valid, force a new token request
       print(
           'getRecordWithRecordId - Token $token is not valid ${response.data}, force a new token request');
-      token = await getToken(databases: databases, forceRenew: true) ?? "";
+      token = await getToken(
+              databases: databases,
+              forceRenew: true,
+              process: 'getRecordWithRecordId 3') ??
+          "";
       if (token.isEmpty) {
         print('getRecordWithRecordId - token is STILL empty, return Exception');
         return Exception('Unable to get a new token');
@@ -582,10 +624,12 @@ Future setGlobals({
   databaseId = envVars['DATABASE_ID'];
 
   // Get token
-  token = await getToken(databases: databases) ?? "";
+  token = await getToken(databases: databases, process: 'setGlobals 1') ?? "";
   if (token.isEmpty) {
     print('setGlobals - token is empty, forceRenew');
-    token = await getToken(databases: databases, forceRenew: true) ?? "";
+    token = await getToken(
+            databases: databases, forceRenew: true, process: 'setGlobals 2') ??
+        "";
   }
   if (token.isEmpty) {
     print('setGlobals - token is STILL empty, return Exception');
@@ -644,7 +688,11 @@ Future setGlobals({
       // Token is not valid, force a new token request
       print(
           'setGlobals - Token $token is not valid ${response.data}, force a new token request');
-      token = await getToken(databases: databases, forceRenew: true) ?? "";
+      token = await getToken(
+              databases: databases,
+              forceRenew: true,
+              process: 'setGlobals 3') ??
+          "";
       if (token.isEmpty) {
         print('setGlobals - token is STILL empty, return Exception');
         return Exception('Unable to get a new token');
