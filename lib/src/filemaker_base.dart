@@ -86,6 +86,11 @@ Future getToken(
     print('getToken - Extend token $token to $timestamp');
 
     return token;
+  } else {
+    print('epoch: $epoch');
+    print('now: $now');
+    print('now - epoch: ${now - epoch}');
+    print('getToken - Token $token is expired, force a new token request');
   }
   // Configure dio request to communicate with Filemaker Data API
   dynamic requestInterceptor(
