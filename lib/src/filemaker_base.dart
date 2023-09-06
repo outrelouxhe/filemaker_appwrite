@@ -27,6 +27,8 @@ String get getFilemakerAppwriteVersion => '2023-04-27';
 Future getToken(
     {required appwrite.Databases databases, bool forceRenew = false}) async {
   try {
+    print(
+        'getToken START with current forceRenew: $forceRenew - token: $token');
     models.DocumentList documentList = await databases.listDocuments(
         databaseId: databaseId!,
         collectionId: variablesCollectionId!,
@@ -34,11 +36,16 @@ Future getToken(
           appwrite.Query.equal(
               'key', '$targetProjectId.token.$filemakerFilename')
         ]);
+    print('getToken - documentList: ${documentList.documents}');
     if (documentList.total != 0) {
       token = documentList.documents.first.data['value'];
       epoch = documentList.documents.first.data['epoch'];
       tokenDocumentId = documentList.documents.first.data['\$id'];
+      print('getToken - get token from appwrite: $token');
+      print('getToken - get epoch from appwrite: $epoch');
+      print('getToken - get tokenDocumentId from appwrite: $tokenDocumentId');
     } else {
+      print('getToken - token record not found, create it');
       epoch = 0;
       Document document = await databases.createDocument(
           databaseId: databaseId!,
@@ -50,6 +57,7 @@ Future getToken(
             "epoch": "0"
           });
       tokenDocumentId = document.$id;
+      print('getToken - get tokenDocumentId from appwrite: $tokenDocumentId');
     }
   } on appwrite.AppwriteException catch (e) {
     print('getToken - AppwriteException: $e');
