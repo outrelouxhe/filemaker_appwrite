@@ -82,7 +82,7 @@ Future getToken(
       documentId: tokenDocumentId,
       data: {
         "epoch": now,
-        "comments": 'timestamp process:$process now:$now',
+        "comments": '$timestamp process:$process now:$now',
       },
     );
     print('getToken - Extend token $token to $timestamp');
@@ -234,7 +234,7 @@ Future createOrUpdateOptimusRecord({
     options.baseUrl = filemakerDataApiUrl!;
     // Consider only server error >= 500 as errors
     options.validateStatus = (status) {
-      return status != null && status < 600;
+      return status != null && status < 500;
     };
     return handler.next(options);
   }
