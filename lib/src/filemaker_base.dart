@@ -341,7 +341,7 @@ Future find({
     options.baseUrl = filemakerDataApiUrl!;
     // Consider only server error >= 500 as errors
     options.validateStatus = (status) {
-      return status != null && status < 600;
+      return status != null && status < 500;
     };
     return handler.next(options);
   }
@@ -431,7 +431,7 @@ Future runScript({
     options.baseUrl = filemakerDataApiUrl!;
     // Consider only server error >= 500 as errors
     options.validateStatus = (status) {
-      return status != null && status < 600;
+      return status != null && status < 500;
     };
     return handler.next(options);
   }
@@ -555,7 +555,7 @@ Future getRecordWithRecordId({
     options.baseUrl = filemakerDataApiUrl!;
     // Consider only server error >= 500 as errors
     options.validateStatus = (status) {
-      return status != null && status < 600;
+      return status != null && status < 500;
     };
     return handler.next(options);
   }
@@ -644,7 +644,7 @@ Future setGlobals({
     options.baseUrl = filemakerDataApiUrl!;
     // Consider only server error >= 500 as errors
     options.validateStatus = (status) {
-      return status != null && status < 600;
+      return status != null && status < 500;
     };
     return handler.next(options);
   }
