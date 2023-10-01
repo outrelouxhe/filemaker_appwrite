@@ -120,7 +120,7 @@ Future getToken(
     stderr.write('${error.requestOptions.extra}');
     stderr.write('${error.requestOptions.queryParameters}');
     print('getToken - errorInterceptor error: $error');
-    handler.next(error);
+    return handler.next(error);
   }
 
   try {
@@ -253,7 +253,7 @@ Future createOrUpdateOptimusRecord({
     stderr.write('queryParameters: ${error.requestOptions.queryParameters}');
     print(
         'createOrUpdateOptimusRecord - errorInterceptor -  ${error.response} -  ${error.requestOptions.data}');
-    handler.next(error);
+    return handler.next(error);
   }
 
   try {
@@ -359,7 +359,7 @@ Future find({
     stderr.write('extra: ${error.requestOptions.extra}');
     stderr.write('queryParameters: ${error.requestOptions.queryParameters}');
     print('find - errorInterceptor -  ${error.response} -  ${error.message}');
-    handler.next(error);
+    return handler.next(error);
   }
 
   try {
@@ -450,7 +450,7 @@ Future runScript({
     stderr.write('${error.requestOptions.queryParameters}');
     print(
         'runScript - errorInterceptor -  ${error.response} -  ${error.message}');
-    handler.next(error);
+    return handler.next(error);
   }
 
   try {
@@ -572,7 +572,7 @@ Future getRecordWithRecordId({
     stderr.write('${error.requestOptions.uri}');
     stderr.write('${error.requestOptions.extra}');
     stderr.write('${error.requestOptions.queryParameters}');
-    handler.next(error);
+    return handler.next(error);
   }
 
   try {
@@ -663,7 +663,7 @@ Future setGlobals({
     stderr.write('${error.requestOptions.queryParameters}');
     print(
         'setGlobals - errorInterceptor -  ${error.response} -  ${error.message}');
-    handler.next(error);
+    return handler.next(error);
   }
 
   try {
