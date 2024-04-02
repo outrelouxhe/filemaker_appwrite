@@ -59,7 +59,7 @@ Future getToken({
           data: {
             "key": '$targetProjectId.token.$filemakerFilename',
             "value": "invalid",
-            "epoch": "0"
+            "epoch": 0
           });
       tokenDocumentId = document.$id;
       context.log(
