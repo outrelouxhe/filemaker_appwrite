@@ -324,9 +324,9 @@ Future find({
     options.headers.addAll({"Authorization": bearerAuth});
     options.headers.addAll({"Content-Type": 'application/json'});
     options.baseUrl = filemakerDataApiUrl!;
-    // Consider only server error >= 500 as errors
+    // Consider only server error > 500 as errors
     options.validateStatus = (status) {
-      return status != null && status < 500;
+      return status != null && status <= 500;
     };
     return handler.next(options);
   }
