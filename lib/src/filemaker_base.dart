@@ -29,8 +29,6 @@ Future getToken(
     bool forceRenew = false,
     required String process}) async {
   try {
-    print(
-        'getToken START with current forceRenew: $forceRenew - token: $token');
     models.DocumentList documentList = await databases.listDocuments(
         databaseId: databaseId!,
         collectionId: variablesCollectionId!,
@@ -38,16 +36,12 @@ Future getToken(
           appwrite.Query.equal(
               'key', '$targetProjectId.token.$filemakerFilename')
         ]);
-    print('getToken - documentList: ${documentList.documents}');
+
     if (documentList.total != 0) {
       token = documentList.documents.first.data['value'];
       epoch = documentList.documents.first.data['epoch'];
       tokenDocumentId = documentList.documents.first.data['\$id'];
-      print('getToken - get token from appwrite: $token');
-      print('getToken - get epoch from appwrite: $epoch');
-      print('getToken - get tokenDocumentId from appwrite: $tokenDocumentId');
     } else {
-      print('getToken - token record not found, create it');
       epoch = 0;
       Document document = await databases.createDocument(
           databaseId: databaseId!,
@@ -59,7 +53,6 @@ Future getToken(
             "epoch": "0"
           });
       tokenDocumentId = document.$id;
-      print('getToken - get tokenDocumentId from appwrite: $tokenDocumentId');
     }
   } on appwrite.AppwriteException catch (e) {
     print('getToken - AppwriteException: $e');
@@ -89,9 +82,6 @@ Future getToken(
 
     return token;
   } else {
-    print('epoch: $epoch');
-    print('now: $now');
-    print('now - epoch: ${now - epoch}');
     print('getToken - Token $token is expired, force a new token request');
   }
   // Configure dio request to communicate with Filemaker Data API
@@ -102,7 +92,6 @@ Future getToken(
     options.headers.addAll({"Authorization": basicAuth});
     options.headers.addAll({"Content-Type": 'application/json'});
     options.baseUrl = filemakerDataApiUrl!;
-    print('getToken - requestInterceptor options: $options');
     return handler.next(options);
   }
 
@@ -119,7 +108,6 @@ Future getToken(
     stderr.write('${error.requestOptions.uri}');
     stderr.write('${error.requestOptions.extra}');
     stderr.write('${error.requestOptions.queryParameters}');
-    print('getToken - errorInterceptor error: $error');
     return handler.next(error);
   }
 
@@ -129,11 +117,8 @@ Future getToken(
         onRequest: (options, handler) => requestInterceptor(options, handler),
         onError: (error, handler) => errorInterceptor(error, handler),
       ));
-    print('getToken - Sending token request to Filemaker Data API');
     Response response =
         await dio.post("/databases/$filemakerFilename/sessions");
-    print(
-        'getToken - Receiving token response from Filemaker Data API: ${response.data}');
     dio.close();
     var _token = response.data['response']['token'];
     if (_token == null || _token is! String) {
