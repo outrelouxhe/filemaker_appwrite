@@ -24,10 +24,12 @@ int get now => DateTime.now().millisecondsSinceEpoch;
 // Trick to test if repo is well updated
 String get getFilemakerAppwriteVersion => '2023-04-27';
 
-Future getToken(
-    {required appwrite.Databases databases,
-    bool forceRenew = false,
-    required String process}) async {
+Future getToken({
+  required appwrite.Databases databases,
+  bool forceRenew = false,
+  required String process,
+  bool showExtendTokenLog = true,
+}) async {
   try {
     models.DocumentList documentList = await databases.listDocuments(
         databaseId: databaseId!,
@@ -56,11 +58,11 @@ Future getToken(
     }
   } on appwrite.AppwriteException catch (e) {
     print(
-        '${DateTime.now().toString().padRight(28)} | getToken - AppwriteException: $e');
+        '${DateTime.now().toString().padRight(28)} | getToken - $filemakerFilename - AppwriteException: $e');
     return e;
   } catch (e) {
     print(
-        '${DateTime.now().toString().padRight(28)} | getToken - Exception: $e');
+        '${DateTime.now().toString().padRight(28)} | getToken - $filemakerFilename - Exception: $e');
     return e;
   }
 
@@ -80,13 +82,15 @@ Future getToken(
         "comments": '$timestamp process:$process now:$now',
       },
     );
-    print(
-        '${DateTime.now().toString().padRight(28)} | getToken - Extend token $token to $timestamp');
+    if (showExtendTokenLog) {
+      print(
+          '${DateTime.now().toString().padRight(28)} | Extend token - $filemakerFilename - $token to $timestamp');
+    }
 
     return token;
   } else {
     print(
-        '${DateTime.now().toString().padRight(28)} | getToken - Token $token is expired, force a new token request');
+        '${DateTime.now().toString().padRight(28)} | Extend token - $filemakerFilename - Token $token is expired, force a new token request');
   }
   // Configure dio request to communicate with Filemaker Data API
   dynamic requestInterceptor(
@@ -144,7 +148,7 @@ Future getToken(
     );
     token = _token;
     print(
-        '${DateTime.now().toString().padRight(28)} | getToken - New token $token updated at $timestamp');
+        '${DateTime.now().toString().padRight(28)} | New token $filemakerFilename - $token updated at $timestamp');
     return _token;
   } catch (error) {
     stderr.write('$error');
@@ -187,6 +191,7 @@ Future createOrUpdateOptimusRecord({
   required Method method,
   String? recordId,
   required dynamic envVars,
+  bool showExtendTokenLog = true,
 }) async {
   filemakerAccountName = envVars['FILEMAKER_ACCOUNT_NAME'];
   filemakerPassword = envVars['FILEMAKER_PASSWORD'];
@@ -198,11 +203,14 @@ Future createOrUpdateOptimusRecord({
 
   // Get token
   var getTokenResult = await getToken(
-          databases: databases, process: 'createOrUpdateOptimusRecord') ??
+          databases: databases,
+          process: 'createOrUpdateOptimusRecord',
+          showExtendTokenLog: showExtendTokenLog) ??
       "";
   if (token.isEmpty) {
     print(
         '${DateTime.now().toString().padRight(28)} | createOrUpdateOptimusRecord - token is empty, forceRenew');
+
     token = await getToken(
             databases: databases,
             forceRenew: true,
@@ -240,9 +248,35 @@ Future createOrUpdateOptimusRecord({
     stderr.write('uri: ${error.requestOptions.uri}');
     stderr.write('extra: ${error.requestOptions.extra}');
     stderr.write('queryParameters: ${error.requestOptions.queryParameters}');
-    print(
-        '${DateTime.now().toString().padRight(28)} | createOrUpdateOptimusRecord - errorInterceptor -  ${error.response} -  ${error.requestOptions.data}');
-    return handler.next(error);
+    try {
+      var code = error.response?.data['messages'][0]['code'];
+      var message = error.response?.data['messages'][0]['message'];
+      if (code == '952' || message == 'User canceled action') {
+        print(
+            '${DateTime.now().toString().padRight(28)} | createOrUpdateOptimusRecord - errorInterceptor -  ${error.response} -  ${error.requestOptions.data}');
+        Dio dio = Dio()
+          ..interceptors.add(InterceptorsWrapper(
+            onRequest: (options, handler) =>
+                requestInterceptor(options, handler),
+          ));
+        Response releaseTokenResponse =
+            await dio.delete("/databases/$filemakerFilename/sessions/$token");
+        dio.close();
+        token = await getToken(
+                databases: databases,
+                forceRenew: true,
+                process: 'createOrUpdateOptimusRecord') ??
+            "";
+        return handler.next(error);
+      }
+      print(
+          '${DateTime.now().toString().padRight(28)} | createOrUpdateOptimusRecord - errorInterceptor -  ${error.response} -  ${error.requestOptions.data}');
+      return handler.next(error);
+    } catch (e) {
+      print(
+          '${DateTime.now().toString().padRight(28)} | createOrUpdateOptimusRecord - errorInterceptor -  ${error.response} -  ${error.requestOptions.data}');
+      return handler.next(error);
+    }
   }
 
   try {
@@ -263,7 +297,8 @@ Future createOrUpdateOptimusRecord({
             data: data,
           );
     var code = response.data['messages'][0]['code'];
-    if (code == "952") {
+    var message = response.data['messages'][0]['message'];
+    if (code == "952" || message == "User canceled action") {
       // Token is not valid, force a new token request
       print(
           '${DateTime.now().toString().padRight(28)} | createOrUpdateOptimusRecord - errorInterceptor -  ${response.data} -  forceRenew');
