@@ -200,8 +200,6 @@ Future createOrUpdateOptimusRecord({
   var getTokenResult = await getToken(
           databases: databases, process: 'createOrUpdateOptimusRecord') ??
       "";
-  print(
-      '${DateTime.now().toString().padRight(28)} | createOrUpdateOptimusRecord - getTokenResult: $getTokenResult - token: $token');
   if (token.isEmpty) {
     print(
         '${DateTime.now().toString().padRight(28)} | createOrUpdateOptimusRecord - token is empty, forceRenew');
