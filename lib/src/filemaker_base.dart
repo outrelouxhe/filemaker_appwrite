@@ -28,11 +28,10 @@ Future getToken({
   required appwrite.Databases databases,
   bool forceRenew = false,
   required String process,
+  bool showExtendTokenLog = true,
   required context,
 }) async {
   try {
-    context.log(
-        'getToken START with current forceRenew: $forceRenew - token: $token');
     models.DocumentList documentList = await databases.listDocuments(
         databaseId: databaseId!,
         collectionId: variablesCollectionId!,
@@ -40,17 +39,11 @@ Future getToken({
           appwrite.Query.equal(
               'key', '$targetProjectId.token.$filemakerFilename')
         ]);
-    context.log('getToken - documentList: ${documentList.documents}');
     if (documentList.total != 0) {
       token = documentList.documents.first.data['value'];
       epoch = documentList.documents.first.data['epoch'];
       tokenDocumentId = documentList.documents.first.data['\$id'];
-      context.log('getToken - get token from appwrite: $token');
-      context.log('getToken - get epoch from appwrite: $epoch');
-      context.log(
-          'getToken - get tokenDocumentId from appwrite: $tokenDocumentId');
     } else {
-      context.log('getToken - token record not found, create it');
       epoch = 0;
       Document document = await databases.createDocument(
           databaseId: databaseId!,
@@ -62,8 +55,6 @@ Future getToken({
             "epoch": 0
           });
       tokenDocumentId = document.$id;
-      context.log(
-          'getToken - get tokenDocumentId from appwrite: $tokenDocumentId');
     }
   } on appwrite.AppwriteException catch (e) {
     context.log('getToken - AppwriteException: $e');
@@ -89,15 +80,15 @@ Future getToken({
         "comments": '$timestamp process:$process now:$now',
       },
     );
-    context.log('getToken - Extend token $token to $timestamp');
+    if (showExtendTokenLog) {
+      context.log('Extend token - $filemakerFilename - $token to $timestamp');
+    }
 
     return token;
   } else {
-    context.log('epoch: $epoch');
-    context.log('now: $now');
-    context.log('now - epoch: ${now - epoch}');
-    context
-        .log('getToken - Token $token is expired, force a new token request');
+    if (showExtendTokenLog) {
+      context.log('Extend token - $filemakerFilename - $token to now');
+    }
   }
   // Configure dio request to communicate with Filemaker Data API
   dynamic requestInterceptor(
@@ -107,7 +98,6 @@ Future getToken({
     options.headers.addAll({"Authorization": basicAuth});
     options.headers.addAll({"Content-Type": 'application/json'});
     options.baseUrl = filemakerDataApiUrl!;
-    context.log('getToken - requestInterceptor options: $options');
     return handler.next(options);
   }
 
@@ -124,7 +114,6 @@ Future getToken({
     stderr.write('${error.requestOptions.uri}');
     stderr.write('${error.requestOptions.extra}');
     stderr.write('${error.requestOptions.queryParameters}');
-    context.log('getToken - errorInterceptor error: $error');
     return handler.next(error);
   }
 
@@ -134,11 +123,8 @@ Future getToken({
         onRequest: (options, handler) => requestInterceptor(options, handler),
         onError: (error, handler) => errorInterceptor(error, handler),
       ));
-    context.log('getToken - Sending token request to Filemaker Data API');
     Response response =
         await dio.post("/databases/$filemakerFilename/sessions");
-    context.log(
-        'getToken - Receiving token response from Filemaker Data API: ${response.data}');
     dio.close();
     var _token = response.data['response']['token'];
     if (_token == null || _token is! String) {
@@ -268,7 +254,36 @@ Future createOrUpdateOptimusRecord({
     stderr.write('queryParameters: ${error.requestOptions.queryParameters}');
     context.log(
         'createOrUpdateOptimusRecord - errorInterceptor -  ${error.response} -  ${error.requestOptions.data}');
-    return handler.next(error);
+    try {
+      var code = error.response?.data['messages'][0]['code'];
+      var message = error.response?.data['messages'][0]['message'];
+      if (code == '952' || message == 'User canceled action') {
+        context.log(
+            'createOrUpdateOptimusRecord - errorInterceptor -  ${error.response} -  ${error.requestOptions.data}');
+        Dio dio = Dio()
+          ..interceptors.add(InterceptorsWrapper(
+            onRequest: (options, handler) =>
+                requestInterceptor(options, handler),
+          ));
+        Response releaseTokenResponse =
+            await dio.delete("/databases/$filemakerFilename/sessions/$token");
+        dio.close();
+        token = await getToken(
+                databases: databases,
+                forceRenew: true,
+                context: context,
+                process: 'createOrUpdateOptimusRecord') ??
+            "";
+        return handler.next(error);
+      }
+      context.log(
+          'createOrUpdateOptimusRecord - errorInterceptor -  ${error.response} -  ${error.requestOptions.data}');
+      return handler.next(error);
+    } catch (e) {
+      context.log(
+          'createOrUpdateOptimusRecord - errorInterceptor -  ${error.response} -  ${error.requestOptions.data}');
+      return handler.next(error);
+    }
   }
 
   try {
@@ -289,7 +304,8 @@ Future createOrUpdateOptimusRecord({
             data: data,
           );
     var code = response.data['messages'][0]['code'];
-    if (code == "952") {
+    var message = response.data['messages'][0]['message'];
+    if (code == "952" || message == "User canceled action") {
       // Token is not valid, force a new token request
       context.log(
           'createOrUpdateOptimusRecord - errorInterceptor -  ${response.data} -  forceRenew');
@@ -365,9 +381,9 @@ Future find({
     options.headers.addAll({"Authorization": bearerAuth});
     options.headers.addAll({"Content-Type": 'application/json'});
     options.baseUrl = filemakerDataApiUrl!;
-    // Consider only server error >= 500 as errors
+    // Consider only server error > 500 as errors
     options.validateStatus = (status) {
-      return status != null && status < 500;
+      return status != null && status <= 500;
     };
     return handler.next(options);
   }
