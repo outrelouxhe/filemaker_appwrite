@@ -7,10 +7,10 @@ environment:
 
 dependencies:
   dart_appwrite: ^12.1.0
-  dio: ^4.0.4
-  intl: ^0.17.0
-  path: ^1.8.0
+  dio: ^5.7.0
+  intl: ^0.20.1
+  path: ^1.9.1
 
 dev_dependencies:
-  lints: ^1.0.0
-  test: ^1.16.0
+  lints: ^5.1.1
+  test: ^1.25.14
