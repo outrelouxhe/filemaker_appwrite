@@ -251,7 +251,7 @@ Future createOrUpdateOptimusRecord({
     try {
       var code = error.response?.data['messages'][0]['code'];
       var message = error.response?.data['messages'][0]['message'];
-      if (code == '952' || message == 'User canceled action') {
+      if (code == '952' || message == 'User canceled action' || code == '100') {
         print(
             '${DateTime.now().toString().padRight(28)} | createOrUpdateOptimusRecord - errorInterceptor -  ${error.response} -  ${error.requestOptions.data}');
         Dio dio = Dio()
@@ -298,7 +298,7 @@ Future createOrUpdateOptimusRecord({
           );
     var code = response.data['messages'][0]['code'];
     var message = response.data['messages'][0]['message'];
-    if (code == "952" || message == "User canceled action") {
+    if (code == "952" || message == "User canceled action" || code == "100") {
       // Token is not valid, force a new token request
       print(
           '${DateTime.now().toString().padRight(28)} | createOrUpdateOptimusRecord - errorInterceptor -  ${response.data} -  forceRenew');
@@ -403,7 +403,7 @@ Future find({
     );
 
     var code = response.data['messages'][0]['code'];
-    if (code == "952") {
+    if (code == "952" || code == "100") {
       // Token is not valid, force a new token request
       token = await getToken(
               databases: databases, forceRenew: true, process: 'find 3') ??
@@ -499,7 +499,7 @@ Future runScript({
       response = await dio.get(url);
 
       var code = response.data['messages'][0]['code'];
-      if (code == "952") {
+      if (code == "952" || code == "100") {
         // Token is not valid, force a new token request
         print(
             '${DateTime.now().toString().padRight(28)} | runScript - Token $token is not valid ${response.data}, force a new token request');
@@ -516,7 +516,7 @@ Future runScript({
     } else {
       dio.get(url).then((response) async {
         var code = response.data['messages'][0]['code'];
-        if (code == "952") {
+        if (code == "952" || code == "100") {
           // Token is not valid, force a new token request
           print(
               '${DateTime.now().toString().padRight(28)} | runScript - Token $token is not valid ${response.data}, force a new token request');
@@ -618,7 +618,7 @@ Future getRecordWithRecordId({
         "/databases/$filemakerFilename/layouts/$layoutName/records/$recordId");
 
     var code = response.data['messages'][0]['code'];
-    if (code == "952") {
+    if (code == "952" || code == "100") {
       // Token is not valid, force a new token request
       print(
           '${DateTime.now().toString().padRight(28)} | getRecordWithRecordId - Token $token is not valid ${response.data}, force a new token request');
@@ -719,7 +719,7 @@ Future setGlobals({
     print(
         '${DateTime.now().toString().padRight(28)} | setting globals response: ${response.data}');
     var code = response.data['messages'][0]['code'];
-    if (code == "952") {
+    if (code == "952" || code == "100") {
       // Token is not valid, force a new token request
       print(
           '${DateTime.now().toString().padRight(28)} | setGlobals - Token $token is not valid ${response.data}, force a new token request');
