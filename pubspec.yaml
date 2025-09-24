@@ -6,7 +6,7 @@ environment:
   sdk: "^3.3.4"
 
 dependencies:
-  dart_appwrite: ^16.0.0
+  dart_appwrite: ^17.0.0
   dio: ^5.7.0
   intl: ^0.20.0
   path: ^1.9.0
